@@ -2,7 +2,7 @@
   "name": "fkr",
   "version": "0.1.0",
   "description": "Simple tool for generating dummy json files using faker",
-  "main": "index.js",
+  "main": "fkr.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

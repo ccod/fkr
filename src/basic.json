@@ -1,7 +1,10 @@
 {
     "fkr/times": 4,
     "fkr/structure": {
-        "name": ["internet.userName"],
-        "comment": ["lorem.sentences", 2]
+        "name": { "fkr/fake": ["internet.userName"] },
+        "comment": { "fkr/fake": ["lorem.sentences", 2] },
+        "commentTitle": "foobar",
+        "stars": [true, true, true, true, false],
+        "geo": { "lat": 0.2830, "long": 0.4729 }
     }
 }
