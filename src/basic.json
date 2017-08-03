@@ -1,7 +1,7 @@
 {
     "fkr/times": 4,
     "fkr/structure": {
-        "name": ["username"],
-        "comment": ["sentances", 2]
+        "name": ["internet.userName"],
+        "comment": ["lorem.sentences", 2]
     }
 }
