@@ -1,7 +1,7 @@
 {
-    times: 4,
-    structure: [{
-        name: ['username'],
-        comment: ['sentances' 2]
-    }]
+    "fkr/times": 4,
+    "fkr/structure": {
+        "name": ["username"],
+        "comment": ["sentances", 2]
+    }
 }
