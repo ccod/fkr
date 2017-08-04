@@ -81,6 +81,9 @@ function recursivelyExpand(tree) {
       }
     }, tree)
   }
+
+  // less tree and more leaf node
+  return tree
 }
 
 fileData.then(data => {
