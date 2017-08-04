@@ -1,11 +1,17 @@
 {
-    "fkr/times": 3,
+    "fkr/times": 2,
     "fkr/structure": {
         "username": { "fkr/fake": ["internet.userName"] },
         "address": {
             "street": { "fkr/fake": ["address.streetAddress"] },
-            "city": { "fkr/fake": ["address.city"]},
+            "city": { "fkr/fake": ["address.city"] },
             "zip": { "fkr/fake": ["address.zipCode"] }
+        },
+        "comments": {
+            "fkr/times": 2,
+            "fkr/structure": {
+                "text": { "fkr/fake": ["lorem.sentences", 1] }
+            }
         }
     }
 }

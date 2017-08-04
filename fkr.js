@@ -27,48 +27,62 @@ let fileData = new Promise((resolve, reject) => {
   })
 })
 
-// making assumptions about the shape of the data
-function expand(json) {
-  let shape = json["fkr/structure"]
-  return _.times(_.constant(json["fkr/structure"]), json["fkr/times"])
-}
-
-// maybe stack frame problems if I am not careful??
-function recursivelyExpand(json) {
-
-}
-
-function recursivelyFake(json) {
-
-}
-
 function callFaker(arr) {
   if (arr.length == 1) {
     return _.get(arr[0], faker).call()
   }
   if (arr.length > 1) {
-    let fkrArgs = _.slice(1, 8, arr )
+    let fkrArgs = _.slice(1, 8, arr)
     return _.get(arr[0], faker).apply(null, fkrArgs)
   }
   throw "can't work with an empty array, or whatever this is"
 }
 
-// there is a bug here, having to do with slice
-function makeFake(fakeVal) {
-  if (_.isObject(fakeVal) && fakeVal['fkr/fake']) {
-    return callFaker(fakeVal['fkr/fake'])
+function expand(json) {
+  let shape = json["fkr/structure"]
+  return _.times(_.constant(json["fkr/structure"]), json["fkr/times"])
+}
+
+function detectFakerMap(keys) {
+  return (keys.length == 1 && keys[0] == 'fkr/fake')
+}
+
+function detectExpansionKeys(keys) {
+  return (keys.length == 2 && _.isEqual(keys, ['fkr/times', 'fkr/structure']))
+}
+
+function recursivelyExpand(tree) {
+  if (!_.isArray(tree) && _.isObject(tree)) {
+    let keys = _.keys(tree)
+
+    if (detectExpansionKeys(keys)) {
+      let expanded = expand(tree),
+          maybe = recursivelyExpand(expanded)
+      return maybe
+    }
+
+    if (detectFakerMap(keys)) {
+      return callFaker(tree['fkr/fake'])
+    } else {
+      let maybeExpand = _.map(k => _.update(k, (x) => recursivelyExpand(x), {[k]: tree[k]}), keys)
+      let ack = _.reduce(_.assign, {}, maybeExpand)
+      return ack
+    }
   }
-  return fakeVal
+
+  if (_.isArray(tree)) {
+    return _.map(node => {
+      if (!_.isArray(node) && _.isObject(node)) {
+        return recursivelyExpand(node)
+      } else {
+        return node
+      }
+    }, tree)
+  }
 }
 
-function genFake(json) {
-  return _.map(x => _.mapValues(val => makeFake(val))(x), json)
-}
-
-fileData.then(x => {
-  let data = JSON.parse(x)
-  let output = _.compose(genFake, expand)(data)
-  // if (args.length == 1) { return process.stdout.write(JSON.stringify(output)) }
-  if (args.length == 1) { console.log(output) }
-  if (args.length == 2) { return fs.writeFile(args[1], JSON.stringify(output), 'utf8', maybeError) }
+fileData.then(data => {
+  let output = recursivelyExpand(JSON.parse(data))
+  if (args.length == 1) { return process.stdout.write(JSON.stringify(output, null, 2)) }
+  if (args.length == 2) { return fs.writeFile(args[1], JSON.stringify(output, null, 2), 'utf8', maybeError) }
 }).catch(error)
