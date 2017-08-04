@@ -2,42 +2,20 @@
 
 var _ = require('lodash/fp'),
     faker = require('faker'),
-    fs = require('fs'),
-    path = require('path')
+    fs = require('fs')
 
-// ::TODO ... MAYBE
-// I may write write this in clojurescript so I can get use transit to consume edn...
-// because I think the format will be a bit more terse
-
-// not really a fan of lodash/fp slice as far as I can tell,
-// because you can't default to end of array
-let args = _.slice(2, 8, process.argv)
-let fileArg = process.argv[2]
-
-// Super dumb error handler stub
-function error(err) { console.log('woops, err: ', err) }
-
-function maybeError(err) {
-  if (err) throw err
-  console.log('File successfully saved!')
-}
-
-let fileData = new Promise((resolve, reject) => {
-  fs.readFile(fileArg, 'utf8', (err, data) => {
-    if (err) reject(err)
-    return resolve(data)
-  })
-})
 
 function callFaker(arr) {
+  if (!_.isArray(arr)) throw "Must use array form as value to 'fkr/fake' key"
+
   if (arr.length == 1) {
     return _.get(arr[0], faker).call()
   }
+
   if (arr.length > 1) {
-    let fkrArgs = _.slice(1, 8, arr)
+    let fkrArgs = _.slice(1, arr.length, arr)
     return _.get(arr[0], faker).apply(null, fkrArgs)
   }
-  throw "can't work with an empty array, or whatever this is"
 }
 
 function expand(json) {
@@ -53,41 +31,62 @@ function detectExpansionKeys(keys) {
   return (keys.length == 2 && _.isEqual(keys, ['fkr/times', 'fkr/structure']))
 }
 
-function recursivelyExpand(tree) {
-  if (!_.isArray(tree) && _.isObject(tree)) {
-    let keys = _.keys(tree)
+function walk(node) {
+  if (_.isPlainObject(node)) {
+    let keys = _.keys(node)
 
-    if (detectExpansionKeys(keys)) {
-      let expanded = expand(tree),
-          maybe = recursivelyExpand(expanded)
-      return maybe
-    }
+    if (detectExpansionKeys(keys)) return walk(expand(node))
+    if (detectFakerMap(keys))      return callFaker(node['fkr/fake'])
 
-    if (detectFakerMap(keys)) {
-      return callFaker(tree['fkr/fake'])
-    } else {
-      let maybeExpand = _.map(k => _.update(k, (x) => recursivelyExpand(x), {[k]: tree[k]}), keys)
-      let ack = _.reduce(_.assign, {}, maybeExpand)
-      return ack
-    }
+    return _.compose(
+      _.reduce(_.assign, {}),
+      _.map(k => _.update(k, x => walk(x), {[k]: node[k]})) // TODO:: make this line less confusing
+    )(keys)
   }
 
-  if (_.isArray(tree)) {
-    return _.map(node => {
-      if (!_.isArray(node) && _.isObject(node)) {
-        return recursivelyExpand(node)
-      } else {
-        return node
-      }
-    }, tree)
-  }
+  if (_.isArray(node)) return _.map(x => _.isPlainObject(x) ? walk(x) : x)(node)
 
-  // less tree and more leaf node
-  return tree
+  return node
 }
 
-fileData.then(data => {
-  let output = recursivelyExpand(JSON.parse(data))
-  if (args.length == 1) { return process.stdout.write(JSON.stringify(output, null, 2)) }
-  if (args.length == 2) { return fs.writeFile(args[1], JSON.stringify(output, null, 2), 'utf8', maybeError) }
-}).catch(error)
+// TODO:: Should really have better error handlers
+function error(err) { console.log('woops, error: ', err) }
+function fileWriteErrorHandler(err) {
+  if (err) throw err
+  console.log('File successfully saved!')
+}
+
+function readFile(filename) {
+  return new Promise((resolve, reject) => {
+    fs.readFile(filename, 'utf8', (err, data) => {
+      if (err) reject(err)
+      return resolve(data)
+    })
+  })
+}
+
+function toolExplanation() {
+  var text = ""
+  text += "\nThis is a quick command line tool for generating dummy data.\n"
+  text += "takes a source file as an arguement, and optionally a destination file.\n"
+  text += "extra arguements will be ignored currently.\n\n"
+  text += "\te.g. 'fkr src/basic.json'\n"
+  text += "\t     'fkr src/basic.json path/to/destination.json'\n\n"
+  return text
+}
+
+function commandLineHandler() {
+  let args = _.slice(2, process.argv.length, process.argv)
+
+  if (args.length == 0) return process.stdout.write(toolExplanation())
+  readFile(args[0])
+    .then(data => {
+      let output = walk(JSON.parse(data))
+
+      if (args.length == 1) return process.stdout.write(JSON.stringify(output, null, 2))
+      if (args.length == 2) return fs.writeFile(args[1], JSON.stringify(output, null, 2), 'utf8', fileWriteErrorHandler)
+    })
+    .catch(error)
+}
+
+commandLineHandler()
