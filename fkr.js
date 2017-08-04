@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 var _ = require('lodash/fp'),
     faker = require('faker'),
     fs = require('fs'),

@@ -3,10 +3,11 @@
   "version": "0.1.0",
   "description": "Simple tool for generating dummy json files using faker",
   "main": "fkr.js",
+  "bin": { "fkr": "./fkr.js" },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "author": "Christopher Codrington",
   "license": "ISC",
   "dependencies": {
     "faker": "^4.1.0",
