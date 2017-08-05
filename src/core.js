@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 var _ = require('lodash/fp'),
     faker = require('faker'),
     fs = require('fs')
@@ -89,4 +87,15 @@ function commandLineHandler() {
     .catch(error)
 }
 
-commandLineHandler()
+module.exports = {
+  commandLineHandler: commandLineHandler,
+  toolExplanation: toolExplanation,
+  readFile: readFile,
+  fileWriteErrorHandler: fileWriteErrorHandler,
+  error: error,
+  walk: walk,
+  detectExpansionKeys: detectExpansionKeys,
+  detectFakerMap: detectFakerMap,
+  expand: expand,
+  callFaker: callFaker
+}
